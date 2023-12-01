@@ -57,3 +57,14 @@ export async function getProductById(productId: string) {
     console.error("ERROR: Problem getting product by id from MongoDB ", error);
   }
 }
+
+export async function getAllProducts() {
+  try {
+    connectToDB();
+    const products = await Product.find();
+    if (!products) return null;
+    return products;
+  } catch (error) {
+    console.error("ERROR: Problem getting all products from MongoDB ", error);
+  }
+}
