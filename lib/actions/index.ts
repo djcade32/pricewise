@@ -5,6 +5,8 @@ import Product from "../models/product.model";
 import { connectToDB } from "../mongoose";
 import { scrapeAmazonProduct } from "../scraper";
 import { getAveragePrice, getHighestPrice, getLowestPrice } from "../utils";
+import { User } from "@/types";
+import { generateEmailBody, sendEmail } from "../nodemailer";
 
 export async function scrapeAndStoreProduct(productUrl: string) {
   if (!productUrl) return;
@@ -23,6 +25,11 @@ export async function scrapeAndStoreProduct(productUrl: string) {
         ...existingProduct.priceHistory,
         { price: scrapedProduct.currentPrice },
       ];
+      updatedPriceHistory.map(
+        (item: any) =>
+          item.price !== scrapedProduct.originalPrice &&
+          updatedPriceHistory.push({ price: scrapedProduct.originalPrice })
+      );
 
       product = {
         ...scrapedProduct,
@@ -54,7 +61,7 @@ export async function getProductById(productId: string) {
     if (!product) return null;
     return product;
   } catch (error) {
-    console.error("ERROR: Problem getting product by id from MongoDB ", error);
+    console.log("ERROR: Problem getting product by id from MongoDB ", error);
   }
 }
 
@@ -65,6 +72,37 @@ export async function getAllProducts() {
     if (!products) return null;
     return products;
   } catch (error) {
-    console.error("ERROR: Problem getting all products from MongoDB ", error);
+    console.log("ERROR: Problem getting all products from MongoDB ", error);
+  }
+}
+
+export async function getSimilarProducts(productId: string) {
+  try {
+    connectToDB();
+    const currentProduct = await Product.findById(productId);
+    if (!currentProduct) return null;
+    const similarProducts = await Product.find({ _id: { $ne: productId } }).limit(3);
+    return similarProducts;
+  } catch (error) {
+    console.log("ERROR: Problem getting similar products from MongoDB ", error);
+  }
+}
+
+export async function addUserEmailToProduct(productId: string, userEmail: string) {
+  try {
+    connectToDB();
+    const product = await Product.findById(productId);
+    if (!product) return null;
+    const userExists = product.users.some((user: User) => user.email === userEmail);
+    if (userExists) return product;
+    if (!userExists) {
+      product.users.push({ email: userEmail });
+      await product.save();
+      const emailContent = await generateEmailBody(product, "WELCOME");
+      await sendEmail(emailContent, [userEmail]);
+    }
+    return product;
+  } catch (error) {
+    console.log("ERROR: Problem adding user email to product ", error);
   }
 }
