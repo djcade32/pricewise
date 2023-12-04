@@ -24,6 +24,8 @@ export async function GET(request: Request) {
         // Scrape product
         const scrapedProduct = await scrapeAmazonProduct(currentProduct.url);
 
+        console.log("scrapedProduct", scrapedProduct);
+
         if (!scrapedProduct) return;
 
         const updatedPriceHistory = [
@@ -42,12 +44,7 @@ export async function GET(request: Request) {
         };
 
         // Update Products in DB
-        const updatedProduct = await Product.findOneAndUpdate(
-          {
-            url: product.url,
-          },
-          product
-        );
+        const updatedProduct = await Product.findOneAndUpdate({ url: product.url }, product);
 
         // ======================== 2 CHECK EACH PRODUCT'S STATUS & SEND EMAIL ACCORDINGLY
         const emailNotifType = getEmailNotifType(scrapedProduct, currentProduct);
