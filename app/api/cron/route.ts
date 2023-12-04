@@ -24,7 +24,7 @@ export async function GET(request: Request) {
         // Scrape product
         const scrapedProduct = await scrapeAmazonProduct(currentProduct.url);
 
-        console.log("scrapedProduct", scrapedProduct);
+        console.log("scrapedProduct: ", scrapedProduct);
 
         if (!scrapedProduct) return;
 
@@ -34,6 +34,8 @@ export async function GET(request: Request) {
             price: scrapedProduct.currentPrice,
           },
         ];
+
+        console.log("Updated price history: ", updatedPriceHistory);
 
         const product = {
           ...scrapedProduct,
